@@ -1,0 +1,67 @@
+{
+  "name": "n8n-nodes-kalshi",
+  "version": "1.0.0",
+  "description": "n8n community node for Kalshi prediction markets - trade, analyze, and automate prediction market strategies",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "kalshi",
+    "prediction markets",
+    "trading",
+    "markets",
+    "api",
+    "automation",
+    "forecasting",
+    "betting"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/deepakdhaka-1/n8n-nodes-kalshi/#readme",
+  "author": {
+    "name": "Deepak Dhaka",
+    "email": "gxyz717@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepakdhaka-1/n8n-nodes-kalshi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/deepakdhaka-1/n8n-nodes-kalshi/issues"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && npm run lint",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/KalshiApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Kalshi/Kalshi.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.1",
+    "gulp": "^4.0.2",
+    "n8n-workflow": "^1.22.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
