@@ -7,43 +7,44 @@ import {
 } from 'n8n-workflow';
 
 let cachedToken: string | null = null;
-let tokenExpiry: number = 0;
+let tokenExpiry = 0;
 
 export async function getAccessToken(this: IExecuteFunctions): Promise<string> {
 	const now = Date.now();
-	
-	// Return cached token if still valid
+
 	if (cachedToken && now < tokenExpiry) {
 		return cachedToken;
 	}
 
 	const credentials = await this.getCredentials('kalshiApi');
 	const environment = credentials.environment as string;
-	const baseUrl = environment === 'production' 
-		? 'https://api.kalshi.com' 
-		: 'https://demo-api.kalshi.co';
 
-	// Login to get token
+	const baseUrl =
+		environment === 'production'
+			? 'https://api.kalshi.com'
+			: 'https://demo-api.kalshi.co';
+
 	const loginOptions: IRequestOptions = {
 		method: 'POST',
+		uri: `${baseUrl}/trade-api/v2/login`,
+		json: true,
 		body: {
 			email: credentials.email,
 			password: credentials.password,
 		},
-		uri: `${baseUrl}/trade-api/v2/login`,
-		json: true,
 	};
 
 	try {
 		const response = await this.helpers.request(loginOptions);
+
 		cachedToken = response.token;
-		
-		// Set token to expire in 55 minutes (tokens typically last 1 hour)
-		tokenExpiry = now + (55 * 60 * 1000);
-		
-		return cachedToken as string;
-	} catch (error) {
-		throw new NodeApiError(this.getNode(), error);
+		tokenExpiry = now + 55 * 60 * 1000;
+
+		return cachedToken!;
+	} catch (error: any) {
+		throw new NodeApiError(this.getNode(), {
+			message: error?.message || String(error),
+		});
 	}
 }
 
@@ -56,46 +57,52 @@ export async function kalshiApiRequest(
 ): Promise<any> {
 	const credentials = await this.getCredentials('kalshiApi');
 	const environment = credentials.environment as string;
-	const baseUrl = environment === 'production' 
-		? 'https://api.kalshi.com' 
-		: 'https://demo-api.kalshi.co';
+
+	const baseUrl =
+		environment === 'production'
+			? 'https://api.kalshi.com'
+			: 'https://demo-api.kalshi.co';
 
 	const token = await getAccessToken.call(this);
 
 	const options: IRequestOptions = {
 		method,
-		body,
-		qs,
 		uri: `${baseUrl}${endpoint}`,
 		json: true,
+		qs,
+		body,
 		headers: {
-			'Authorization': `Bearer ${token}`,
+			Authorization: `Bearer ${token}`,
 			'Content-Type': 'application/json',
 		},
 	};
 
-	// Remove empty body for GET/DELETE requests
 	if ((method === 'GET' || method === 'DELETE') && Object.keys(body).length === 0) {
 		delete options.body;
 	}
 
 	try {
 		return await this.helpers.request(options);
-	} catch (error) {
-		// If token expired, try to get a new one and retry
-		if (error.statusCode === 401) {
+	} catch (error: any) {
+		if (error?.statusCode === 401) {
 			cachedToken = null;
 			tokenExpiry = 0;
+
 			const newToken = await getAccessToken.call(this);
 			options.headers!.Authorization = `Bearer ${newToken}`;
-			
+
 			try {
 				return await this.helpers.request(options);
-			} catch (retryError) {
-				throw new NodeApiError(this.getNode(), retryError as Error);
+			} catch (retryError: any) {
+				throw new NodeApiError(this.getNode(), {
+					message: retryError?.message || String(retryError),
+				});
 			}
 		}
-		throw new NodeApiError(this.getNode(), error as Error);
+
+		throw new NodeApiError(this.getNode(), {
+			message: error?.message || String(error),
+		});
 	}
 }
 
@@ -105,31 +112,21 @@ export async function kalshiApiRequestAllItems(
 	endpoint: string,
 	body: IDataObject = {},
 	qs: IDataObject = {},
-): Promise<any[]> {
+): Promise<IDataObject[]> {
 	const returnData: IDataObject[] = [];
 	let cursor: string | undefined;
 
 	do {
-		if (cursor) {
-			qs.cursor = cursor;
-		}
+		if (cursor) qs.cursor = cursor;
 
 		const responseData = await kalshiApiRequest.call(this, method, endpoint, body, qs);
-		
-		// Handle different response structures
-		if (responseData.markets) {
-			returnData.push(...responseData.markets);
-		} else if (responseData.events) {
-			returnData.push(...responseData.events);
-		} else if (responseData.orders) {
-			returnData.push(...responseData.orders);
-		} else if (responseData.positions) {
-			returnData.push(...responseData.positions);
-		} else if (responseData.fills) {
-			returnData.push(...responseData.fills);
-		} else {
-			returnData.push(responseData);
-		}
+
+		if (responseData.markets) returnData.push(...responseData.markets);
+		else if (responseData.events) returnData.push(...responseData.events);
+		else if (responseData.orders) returnData.push(...responseData.orders);
+		else if (responseData.positions) returnData.push(...responseData.positions);
+		else if (responseData.fills) returnData.push(...responseData.fills);
+		else returnData.push(responseData);
 
 		cursor = responseData.cursor;
 	} while (cursor);
