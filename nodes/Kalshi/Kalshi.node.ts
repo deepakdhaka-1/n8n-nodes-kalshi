@@ -4,7 +4,6 @@ import {
 	INodeType,
 	INodeTypeDescription,
 	IDataObject,
-	NodeOperationError,
 } from 'n8n-workflow';
 
 import { kalshiApiRequest } from './GenericFunctions';
@@ -1140,7 +1139,8 @@ export class Kalshi implements INodeType {
 
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({ error: error.message });
+					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+					returnData.push({ error: errorMessage });
 					continue;
 				}
 				throw error;
