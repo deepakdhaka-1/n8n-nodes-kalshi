@@ -43,7 +43,7 @@ export async function getAccessToken(this: IExecuteFunctions): Promise<string> {
 		
 		return cachedToken as string;
 	} catch (error) {
-		throw new NodeApiError(this.getNode(), error as IDataObject);
+		throw new NodeApiError(this.getNode(), error);
 	}
 }
 
