@@ -60,7 +60,7 @@ export async function kalshiApiRequest(
 
 	const baseUrl =
 		environment === 'production'
-			? 'https://api.elections.kalshi.com/'
+			? 'https://api.elections.kalshi.com/trade-api/v2'
 			: 'https://demo-api.kalshi.co';
 
 	const token = await getAccessToken.call(this);
