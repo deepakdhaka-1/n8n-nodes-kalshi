@@ -6,8 +6,6 @@ import {
 	NodeApiError,
 } from 'n8n-workflow';
 
-import * as crypto from 'crypto';
-
 let cachedToken: string | null = null;
 let tokenExpiry: number = 0;
 
@@ -45,7 +43,7 @@ export async function getAccessToken(this: IExecuteFunctions): Promise<string> {
 		
 		return cachedToken as string;
 	} catch (error) {
-		throw new NodeApiError(this.getNode(), error as Error);
+		throw new NodeApiError(this.getNode(), error as IDataObject);
 	}
 }
 
@@ -85,7 +83,7 @@ export async function kalshiApiRequest(
 		return await this.helpers.request(options);
 	} catch (error) {
 		// If token expired, try to get a new one and retry
-		if ((error as any).statusCode === 401) {
+		if (error.statusCode === 401) {
 			cachedToken = null;
 			tokenExpiry = 0;
 			const newToken = await getAccessToken.call(this);
